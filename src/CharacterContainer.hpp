@@ -107,7 +107,7 @@ public:
 
     void insert(pointer p) {
         container.emplace(p->getId(), p);
-        position_to_id.emplace(p->getPosition(),p->getId());
+        position_to_id[p->getPosition()] = p->getId();
     }
 
     pointer find(const std::string &name) const;
@@ -308,9 +308,6 @@ bool CharacterContainer<T>::findAllCharactersWithXInRangeOf(short int startx, sh
     for(auto& c : candidates) {
         const position& p = c.first;
         TYPE_OF_CHARACTER_ID id = c.second;
-        short int dx = p.x - pos.x;
-        short int dy = p.y - pos.y;
-        short int dz = p.z - pos.z;
         if ((p.x >= startx) && (p.x <= endx)) {
             if(auto character=find(id))
                 ret.push_back(character);
