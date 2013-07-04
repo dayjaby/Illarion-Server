@@ -77,29 +77,7 @@ private:
 
     void projection_x_axis(const position& pos, int r,
                         std::function<bool(TYPE_OF_CHARACTER_ID,const position&,pointer)> isInRange) const {
-        auto pos_iterator = position_to_id.lower_bound(pos);
-        auto left = pos_iterator;
-        auto right = pos_iterator;
-        auto begin = position_to_id.begin();
-        auto end = position_to_id.end();
-        position p;
-        do {
-            if(left==begin) break;
-            left--;
-        } while(left->first.x>=pos.x-r);
 
-        do {
-            right++;
-            if(right==end) break;
-        } while(right->first.x<=pos.x+r);
-
-        for(;left!=right;++left) {
-            auto c = container.find(left->second);
-            if(c!=container.end()) {
-
-                isInRange(left->second,left->first,c->second);
-            }
-        }
     }
 
 public:
