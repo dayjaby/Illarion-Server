@@ -66,7 +66,7 @@ private:
     }
 
     bool getCharacterID(const position& pos,TYPE_OF_CHARACTER_ID& id) {
-        auto i = position_to_id.find(id);
+        auto i = position_to_id.find(pos);
         if(i!=position_to_id.end()) {
             id = (i->second)->getPosition();
             return true;
@@ -122,7 +122,7 @@ public:
     pointer find(const std::string &name) const;
     pointer find(TYPE_OF_CHARACTER_ID id) const;
     pointer find(const position &pos) const;
-
+    void update(TYPE_OF_CHARACTER_ID id, const position& old, const position& current);
     bool erase(TYPE_OF_CHARACTER_ID id);
     void clear() {
         container.clear();
@@ -233,6 +233,7 @@ auto CharacterContainer<T>::findAllCharactersInRangeOf(const position &pos, int 
 template <class T>
 auto CharacterContainer<T>::findAllCharactersInScreen(const position &pos) const -> std::vector<pointer> {
     std::vector<pointer> temp;
+    int distancemetric = 30; ///TODO: what is the correct maximal screen range?
     projection_x_axis(pos,distancemetric,
     [distancemetric,&pos,&temp](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
         short int dx = p.x - pos.x;
@@ -253,7 +254,7 @@ auto CharacterContainer<T>::findAllCharactersInMaxRangeOf(const position &pos, i
         short int dx = p.x - pos.x;
         short int dy = p.y - pos.y;
         short int dz = p.z - pos.z;
-        if(abs(dx) <= dinstancemetric && abs(dy) <= distancemetric && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
+        if(abs(dx) <= distancemetric && abs(dy) <= distancemetric && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
             temp.push_back(character);
         }
     });
@@ -299,7 +300,7 @@ bool CharacterContainer<T>::findAllCharactersWithXInRangeOf(short int startx, sh
     bool found_one = false;
     int r = (endx-startx)/2+1;
     int x = startx + (endx-startx)/2;
-    projection_x_axis(pos,distancemetric,
+    projection_x_axis(position(startx,endx,0),distancemetric,
     [&](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
         if ((p.x >= startx) && (p.x <= endx)) {
             ret.push_back(character);
