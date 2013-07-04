@@ -28,6 +28,20 @@
 #include "utility.hpp"
 #include "constants.hpp"
 
+struct PositionComparison {
+    bool operator()(const position& pos1, const position& pos2) {
+        if(pos1.x == pos2.x) {
+            if(pos1.y == pos2.y) {
+                return pos1.z < pos2.z;
+            } else {
+                return pos1.y < pos2.y;
+            }
+        } else {
+            return pos1.x < pos2.x;
+        }
+    }
+};
+
 template <class T>
 class CharacterContainer {
 public:
@@ -37,7 +51,60 @@ private:
     typedef std::function<void(pointer)> for_each_type;
     typedef void(T::*for_each_member_type)();
     typedef typename std::unordered_map<TYPE_OF_CHARACTER_ID, pointer> container_type;
+    typedef typename std::map<position, TYPE_OF_CHARACTER_ID,PositionComparison> position_to_id_type;
+    position_to_id_type position_to_id;
     container_type container;
+
+    bool getPosition(TYPE_OF_CHARACTER_ID id,position& pos) {
+        auto i = container.find(id);
+        if(i!=container.end()) {
+            pos = (i->second)->getPosition();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    bool getCharacterID(const position& pos,TYPE_OF_CHARACTER_ID& id) {
+        auto i = position_to_id.find(id);
+        if(i!=position_to_id.end()) {
+            id = (i->second)->getPosition();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    void projection_x_axis(const position& pos, int r,
+                        std::function<bool(TYPE_OF_CHARACTER_ID,const position&,pointer)> isInRange) {
+        int size = position_to_id.size();
+        position_to_id[pos];
+        auto pos_iterator = position_to_id.find(pos);
+        auto left = pos_iterator;
+        auto right = pos_iterator;
+        auto begin = position_to_id.begin();
+        auto end = position_to_id.end();
+        position p;
+        do {
+            if(left==begin) break;
+            left--;
+        } while(left->first.x>=pos.x-r);
+
+        do {
+            right++;
+            if(right==end) break;
+        } while(right->first.x<=pos.x+r);
+
+        if(size<position_to_id.size()) position_to_id.erase(pos_iterator);
+
+        for(;left!=right;++left) {
+            auto c = container.find(left->second);
+            if(c!=container.end()) {
+
+                isInRange(left->second,left->first,c->second);
+            }
+        }
+    }
 
 public:
     bool empty() const {
@@ -55,7 +122,7 @@ public:
     pointer find(const std::string &name) const;
     pointer find(TYPE_OF_CHARACTER_ID id) const;
     pointer find(const position &pos) const;
-    
+
     bool erase(TYPE_OF_CHARACTER_ID id);
     void clear() {
         container.clear();
