@@ -68,7 +68,7 @@ private:
     bool getCharacterID(const position& pos,TYPE_OF_CHARACTER_ID& id) {
         auto i = position_to_id.find(pos);
         if(i!=position_to_id.end()) {
-            id = (i->second)->getPosition();
+            id = i->second;
             return true;
         } else {
             return false;
