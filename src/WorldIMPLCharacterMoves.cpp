@@ -84,13 +84,13 @@ void World::checkFieldAfterMove(Character *cc, Field *cfstart) {
 
 void World::moveFromTo(Character *cc, const position& from, const position& to) {
     switch(cc->getType()) {
-        case player:
+        case Character::player:
             Players.update(cc->getId(),from,to);
             break;
-        case monster:
+        case Character::monster:
             Monsters.update(cc->getId(),from,to);
             break;
-        case npc:
+        case Character::npc:
             Npc.update(cc->getId(),from,to);
             break;
     }
