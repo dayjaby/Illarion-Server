@@ -78,7 +78,7 @@ private:
 
 
     auto projection_x_axis(const position& pos, int r) const -> iterator_range<position_to_id_type::const_iterator> {
-        return {{position_to_id.lower_bound(position(pos.x-r-1,0,0))},{position_to_id.upper_bound(position(pos.x+r+1,0,0))}};
+        return {position_to_id.lower_bound(position(pos.x-r-1,0,0)),position_to_id.upper_bound(position(pos.x+r+1,0,0))};
     }
 
 public:
