@@ -230,15 +230,15 @@ template <class T>
 auto CharacterContainer<T>::findAllCharactersInScreen(const position &pos) const -> std::vector<pointer> {
     std::vector<pointer> temp;
     int distancemetric = 30; ///TODO: what is the correct maximal screen range?
-    projection_x_axis(pos,distancemetric,
-    [distancemetric,&pos,&temp](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
+    auto inRange = [distancemetric,&pos,&temp](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
         short int dx = p.x - pos.x;
         short int dy = p.y - pos.y;
         short int dz = p.z - pos.z;
         if(abs(dx) + abs(dy) <= character->getScreenRange() && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
             temp.push_back(character);
         }
-    });
+    };
+    projection_x_axis(pos,distancemetric,inRange);
     return temp;
 }
 
