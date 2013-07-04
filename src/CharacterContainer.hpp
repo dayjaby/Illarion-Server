@@ -28,6 +28,7 @@
 #include "utility.hpp"
 #include "constants.hpp"
 
+
 struct PositionComparison {
     bool operator()(const position& pos1, const position& pos2) const {
         if(pos1.x == pos2.x) {
@@ -75,9 +76,24 @@ private:
         }
     }
 
-    void projection_x_axis(const position& pos, int r,
-                        std::function<bool(TYPE_OF_CHARACTER_ID,const position&,pointer)> isInRange) const {
 
+    auto projection_x_axis(const position& pos, int r) const -> iterator_range<position_to_id_type::iterator> {
+        auto pos_iterator = position_to_id.lower_bound(pos);
+        auto left = pos_iterator;
+        auto right = pos_iterator;
+        auto begin = position_to_id.begin();
+        auto end = position_to_id.end();
+        position p;
+        do {
+            if(left==begin) break;
+            left--;
+        } while(left->first.x>=pos.x-r);
+
+        do {
+            right++;
+            if(right==end) break;
+        } while(right->first.x<=pos.x+r);
+        return {{left,right}};
     }
 
 public:
@@ -91,6 +107,7 @@ public:
 
     void insert(pointer p) {
         container.emplace(p->getId(), p);
+        position_to_id.emplace(p->getPosition(),p->getId());
     }
 
     pointer find(const std::string &name) const;
@@ -191,15 +208,17 @@ bool CharacterContainer<T>::erase(TYPE_OF_CHARACTER_ID id) {
 template <class T>
 auto CharacterContainer<T>::findAllCharactersInRangeOf(const position &pos, int distancemetric) const -> std::vector<pointer> {
     std::vector<pointer> temp;
-    projection_x_axis(pos,distancemetric,
-    [distancemetric,&pos,&temp](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
+    auto candidates = projection_x_axis(pos,distancemetric);
+    for(auto& c : candidates) {
+        const position& p = c.first;
+        TYPE_OF_CHARACTER_ID id = c.second;
         short int dx = p.x - pos.x;
         short int dy = p.y - pos.y;
         short int dz = p.z - pos.z;
         if((abs(dx) + abs(dy) <= distancemetric) && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
-            temp.push_back(character);
+            if(auto character=find(id)) temp.push_back(character);
         }
-    });
+    };
     return temp;
 }
 
@@ -207,31 +226,37 @@ auto CharacterContainer<T>::findAllCharactersInRangeOf(const position &pos, int 
 template <class T>
 auto CharacterContainer<T>::findAllCharactersInScreen(const position &pos) const -> std::vector<pointer> {
     std::vector<pointer> temp;
-    int distancemetric = 30; ///TODO: what is the correct maximal screen range?
-    auto inRange = [distancemetric,&pos,&temp](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
+    const int MAX_SCREEN_RANGE = 30;
+    auto candidates = projection_x_axis(pos,MAX_SCREEN_RANGE);
+    for(auto& c : candidates) {
+        const position& p = c.first;
+        TYPE_OF_CHARACTER_ID id = c.second;
         short int dx = p.x - pos.x;
         short int dy = p.y - pos.y;
         short int dz = p.z - pos.z;
-        if(abs(dx) + abs(dy) <= character->getScreenRange() && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
-            temp.push_back(character);
+        if(auto character=find(id)) {
+            if((abs(dx) + abs(dy) <= character->getScreenRange()) && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
+                temp.push_back(character);
+            }
         }
     };
-    projection_x_axis(pos,distancemetric,inRange);
     return temp;
 }
 
 template <class T>
 auto CharacterContainer<T>::findAllCharactersInMaxRangeOf(const position &pos, int distancemetric) const -> std::vector<pointer> {
     std::vector<pointer> temp;
-    projection_x_axis(pos,distancemetric,
-    [distancemetric,&pos,&temp](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
+    auto candidates = projection_x_axis(pos,distancemetric);
+    for(auto& c : candidates) {
+        const position& p = c.first;
+        TYPE_OF_CHARACTER_ID id = c.second;
         short int dx = p.x - pos.x;
         short int dy = p.y - pos.y;
         short int dz = p.z - pos.z;
         if(abs(dx) <= distancemetric && abs(dy) <= distancemetric && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
-            temp.push_back(character);
+            if(auto character=find(id)) temp.push_back(character);
         }
-    });
+    };
     return temp;
 }
 
@@ -239,34 +264,39 @@ auto CharacterContainer<T>::findAllCharactersInMaxRangeOf(const position &pos, i
 template <class T>
 auto CharacterContainer<T>::findAllAliveCharactersInRangeOf(const position &pos, int distancemetric) const -> std::vector<pointer> {
     std::vector<pointer> temp;
-    projection_x_axis(pos,distancemetric,
-    [distancemetric,&pos,&temp](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
+    auto candidates = projection_x_axis(pos,distancemetric);
+    for(auto& c : candidates) {
+        const position& p = c.first;
+        TYPE_OF_CHARACTER_ID id = c.second;
         short int dx = p.x - pos.x;
         short int dy = p.y - pos.y;
         short int dz = p.z - pos.z;
         if(((abs(dx) + abs(dy) <= distancemetric) || (distancemetric==1 && abs(dx)==1 && abs(dy)==1)) && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
-            if(character->isAlive())
-                temp.push_back(character);
+            if(auto character=find(id))
+                if(character->isAlive())
+                    temp.push_back(character);
         }
-    });
+    };
     return temp;
 }
 
 template <class T>
 auto CharacterContainer<T>::findAllAliveCharactersInRangeOfOnSameMap(const position &pos, int distancemetric) const -> std::vector<pointer> {
     std::vector<pointer> temp;
-    projection_x_axis(pos,distancemetric,
-    [distancemetric,&pos,&temp](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
+    auto candidates = projection_x_axis(pos,distancemetric);
+    for(auto& c : candidates) {
+        const position& p = c.first;
+        TYPE_OF_CHARACTER_ID id = c.second;
         short int dx = p.x - pos.x;
         short int dy = p.y - pos.y;
         short int dz = p.z - pos.z;
         if(((abs(dx) + abs(dy) <= distancemetric) || (distancemetric==1 && abs(dx)==1 && abs(dy)==1)) && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
-            if(character->isAlive())
-                temp.push_back(character);
+            if(auto character=find(id))
+                if(character->isAlive())
+                    temp.push_back(character);
         }
-    });
-    return temp;
-}
+    };
+    return temp;}
 
 
 template <class T>
@@ -274,13 +304,18 @@ bool CharacterContainer<T>::findAllCharactersWithXInRangeOf(short int startx, sh
     bool found_one = false;
     int r = (endx-startx)/2+1;
     int x = startx + (endx-startx)/2;
-    projection_x_axis(position(x,0,0),r,
-    [&](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
+    auto candidates = projection_x_axis(position(x,0,0),r);
+    for(auto& c : candidates) {
+        const position& p = c.first;
+        TYPE_OF_CHARACTER_ID id = c.second;
+        short int dx = p.x - pos.x;
+        short int dy = p.y - pos.y;
+        short int dz = p.z - pos.z;
         if ((p.x >= startx) && (p.x <= endx)) {
-            ret.push_back(character);
-            found_one = true;
+            if(auto character=find(id))
+                ret.push_back(character);
         }
-    });
+    };
     return found_one;
 }
 
