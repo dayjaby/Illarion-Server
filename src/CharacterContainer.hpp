@@ -239,7 +239,7 @@ auto CharacterContainer<T>::findAllCharactersInScreen(const position &pos) const
         short int dx = p.x - pos.x;
         short int dy = p.y - pos.y;
         short int dz = p.z - pos.z;
-        if(abs(dx) + abs(dy) <= character->getScreenRange()) && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
+        if(abs(dx) + abs(dy) <= character->getScreenRange() && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
             temp.push_back(character);
         }
     });
@@ -300,7 +300,7 @@ bool CharacterContainer<T>::findAllCharactersWithXInRangeOf(short int startx, sh
     bool found_one = false;
     int r = (endx-startx)/2+1;
     int x = startx + (endx-startx)/2;
-    projection_x_axis(position(startx,endx,0),distancemetric,
+    projection_x_axis(position(x,0,0),r,
     [&](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
         if ((p.x >= startx) && (p.x <= endx)) {
             ret.push_back(character);
