@@ -82,6 +82,20 @@ void World::checkFieldAfterMove(Character *cc, Field *cfstart) {
     }
 }
 
+void World::TriggerFieldMove(Character *cc, bool moveto) {
+    if (cc && Data::Triggers.exists(cc->getPosition())) {
+        const auto &script = Data::Triggers.script(cc->getPosition());
+
+        if (script) {
+            if (moveto) {
+                script->MoveToField(cc);
+            } else {
+                script->MoveFromField(cc);
+            }
+        }
+    }
+}
+
 void World::moveFromTo(Character *cc, const position& from, const position& to) {
     switch(cc->getType()) {
         case Character::player:
