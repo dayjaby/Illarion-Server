@@ -186,18 +186,30 @@ auto CharacterContainer<T>::find(TYPE_OF_CHARACTER_ID id) const -> pointer {
 
 template <class T>
 auto CharacterContainer<T>::find(const position &pos) const -> pointer {
-    for (const auto &character : container) {
-        if (character.second->getPosition() == pos) {
-            return character.second;
-        }
+    const auto i = position_to_id.find(pos);
+    if(i!=position_to_id.end()) {
+        return find(i->second);
     }
-
     return nullptr;
 }
+
+template <class T>
+void CharacterContainer<T>::update(TYPE_OF_CHARACTER_ID id, const position& old, const position& current) {
+    const auto i = position_to_id.find(old);
+    if(i!=position_to_id.end() && i->second==id) {
+        position_to_id.erase(i);
+    }
+    position_to_id.insert(std::make_pair(current,id));
+}
+
 
 
 template <class T>
 bool CharacterContainer<T>::erase(TYPE_OF_CHARACTER_ID id) {
+    position pos;
+    if(getPosition(id,pos)) {
+        if(position_to_id[pos]==id) position_to_id.erase(pos);
+    }
     return container.erase(id) > 0;
 }
 
@@ -205,21 +217,15 @@ bool CharacterContainer<T>::erase(TYPE_OF_CHARACTER_ID id) {
 template <class T>
 auto CharacterContainer<T>::findAllCharactersInRangeOf(const position &pos, int distancemetric) const -> std::vector<pointer> {
     std::vector<pointer> temp;
-
-    for (const auto &character : container) {
-        const auto &charPos = character.second->getPosition();
-        short int dz = charPos.z - pos.z;
-
-        if ((-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
-            short int dx = charPos.x - pos.x;
-            short int dy = charPos.y - pos.y;
-
-            if ((abs(dx) + abs(dy)) <= distancemetric) {
-                temp.push_back(character.second);
-            }
+    projection_x_axis(pos,distancemetric,
+    [distancemetric,&pos,&temp](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
+        short int dx = p.x - pos.x;
+        short int dy = p.y - pos.y;
+        short int dz = p.z - pos.z;
+        if((abs(dx) + abs(dy) <= distancemetric) && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
+            temp.push_back(character);
         }
-    }
-
+    });
     return temp;
 }
 
@@ -227,43 +233,30 @@ auto CharacterContainer<T>::findAllCharactersInRangeOf(const position &pos, int 
 template <class T>
 auto CharacterContainer<T>::findAllCharactersInScreen(const position &pos) const -> std::vector<pointer> {
     std::vector<pointer> temp;
-
-    for (const auto &character : container) {
-        const auto &charPos = character.second->getPosition();
-        short int dz = charPos.z - pos.z;
-
-        if ((-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
-            short int dx = charPos.x - pos.x;
-            short int dy = charPos.y - pos.y;
-
-            if ((abs(dx) + abs(dy)) <= character.second->getScreenRange()) {
-                temp.push_back(character.second);
-            }
+    projection_x_axis(pos,distancemetric,
+    [distancemetric,&pos,&temp](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
+        short int dx = p.x - pos.x;
+        short int dy = p.y - pos.y;
+        short int dz = p.z - pos.z;
+        if(abs(dx) + abs(dy) <= character->getScreenRange()) && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
+            temp.push_back(character);
         }
-    }
-
+    });
     return temp;
 }
-
 
 template <class T>
 auto CharacterContainer<T>::findAllCharactersInMaxRangeOf(const position &pos, int distancemetric) const -> std::vector<pointer> {
     std::vector<pointer> temp;
-
-    for (const auto &character : container) {
-        const auto &charPos = character.second->getPosition();
-        short int dz = charPos.z - pos.z;
-
-        if ((-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
-            short int dx = charPos.x - pos.x;
-            short int dy = charPos.y - pos.y;
-
-            if ((abs(dx) <= distancemetric) && (abs(dy) <=distancemetric)) {
-                temp.push_back(character.second);
-            }
+    projection_x_axis(pos,distancemetric,
+    [distancemetric,&pos,&temp](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
+        short int dx = p.x - pos.x;
+        short int dy = p.y - pos.y;
+        short int dz = p.z - pos.z;
+        if(abs(dx) <= dinstancemetric && abs(dy) <= distancemetric && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
+            temp.push_back(character);
         }
-    }
-
+    });
     return temp;
 }
 
@@ -271,46 +264,32 @@ auto CharacterContainer<T>::findAllCharactersInMaxRangeOf(const position &pos, i
 template <class T>
 auto CharacterContainer<T>::findAllAliveCharactersInRangeOf(const position &pos, int distancemetric) const -> std::vector<pointer> {
     std::vector<pointer> temp;
-
-    for (const auto &character : container) {
-        const auto &charPos = character.second->getPosition();
-        short int dz = charPos.z - pos.z;
-
-        if ((-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
-            short int dx = charPos.x - pos.x;
-            short int dy = charPos.y - pos.y;
-
-            if (((abs(dx) + abs(dy)) <= distancemetric) ||
-                ((distancemetric == 1) && (abs(dx) == 1) && (abs(dy) == 1))) {       // Allow angle attacks
-                if (character.second->isAlive()) {
-                    temp.push_back(character.second);
-                }
-            }
+    projection_x_axis(pos,distancemetric,
+    [distancemetric,&pos,&temp](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
+        short int dx = p.x - pos.x;
+        short int dy = p.y - pos.y;
+        short int dz = p.z - pos.z;
+        if(((abs(dx) + abs(dy) <= distancemetric) || (distancemetric==1 && abs(dx)==1 && abs(dy)==1)) && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
+            if(character->isAlive())
+                temp.push_back(character);
         }
-    }
-
+    });
     return temp;
 }
 
 template <class T>
 auto CharacterContainer<T>::findAllAliveCharactersInRangeOfOnSameMap(const position &pos, int distancemetric) const -> std::vector<pointer> {
     std::vector<pointer> temp;
-
-    for (const auto &character : container) {
-        const auto &charPos = character.second->getPosition();
-
-        if (charPos.z == pos.z) {
-            short int dx = charPos.x - pos.x;
-            short int dy = charPos.y - pos.y;
-
-            if (((abs(dx) + abs(dy)) <= distancemetric) || ((distancemetric == 1) && (abs(dx) == 1) && (abs(dy) == 1))) {          // Allow angle attacks
-                if (character.second->isAlive()) {
-                    temp.push_back(character.second);
-                }
-            }
+    projection_x_axis(pos,distancemetric,
+    [distancemetric,&pos,&temp](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
+        short int dx = p.x - pos.x;
+        short int dy = p.y - pos.y;
+        short int dz = p.z - pos.z;
+        if(((abs(dx) + abs(dy) <= distancemetric) || (distancemetric==1 && abs(dx)==1 && abs(dy)==1)) && (-RANGEDOWN <= dz) && (dz <= RANGEUP)) {
+            if(character->isAlive())
+                temp.push_back(character);
         }
-    }
-
+    });
     return temp;
 }
 
@@ -318,16 +297,15 @@ auto CharacterContainer<T>::findAllAliveCharactersInRangeOfOnSameMap(const posit
 template <class T>
 bool CharacterContainer<T>::findAllCharactersWithXInRangeOf(short int startx, short int endx, std::vector<pointer> &ret) const {
     bool found_one = false;
-
-    for (const auto &character : container) {
-        const auto &charPos = character.second->getPosition();
-
-        if ((charPos.x >= startx) && (charPos.x <= endx)) {
-            ret.push_back(character.second);
+    int r = (endx-startx)/2+1;
+    int x = startx + (endx-startx)/2;
+    projection_x_axis(pos,distancemetric,
+    [&](TYPE_OF_CHARACTER_ID,const position& p,pointer character) -> void {
+        if ((p.x >= startx) && (p.x <= endx)) {
+            ret.push_back(character);
             found_one = true;
         }
-    }
-
+    });
     return found_one;
 }
 
