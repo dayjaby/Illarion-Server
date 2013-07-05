@@ -21,10 +21,9 @@
 
 #include "globals.hpp"
 #include "CharacterContainer.hpp"
-
-class Player;
-class Monster;
-class NPC;
+#include "Player.hpp"
+#include "Monster.hpp"
+#include "NPC.hpp"
 
 
 template <class T>
