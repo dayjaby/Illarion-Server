@@ -136,6 +136,9 @@ auto CharacterContainer<T>::findAllCharactersInScreen(const position &pos) const
     std::vector<pointer> temp;
     const int MAX_SCREEN_RANGE = 30;
     auto candidates = projection_x_axis(pos,MAX_SCREEN_RANGE);
+    std::cout << "Boundaries:" << std::endl;
+    std::cout << candidates.begin()->first << std::endl;
+    std::cout << candidates.end()->first << std::endl;
     for(auto& c : candidates) {
         const position& p = c.first;
         TYPE_OF_CHARACTER_ID id = c.second;
