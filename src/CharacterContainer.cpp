@@ -19,7 +19,12 @@
 #include <map>
 #include <unordered_map>
 
+#include "globals.hpp"
 #include "CharacterContainer.hpp"
+
+class Player;
+class Monster;
+class NPC;
 
 
 template <class T>
