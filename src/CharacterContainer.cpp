@@ -49,7 +49,7 @@ bool CharacterContainer<T>::getCharacterID(const position& pos,TYPE_OF_CHARACTER
 }
 
 template <class T>
-iterator_range<position_to_id_type::const_iterator> CharacterContainer<T>::projection_x_axis(const position& pos, int r) const {
+iterator_range<typename CharacterContainer<T>::position_to_id_type::const_iterator> CharacterContainer<T>::projection_x_axis(const position& pos, int r) const {
     return {{position_to_id.upper_bound(position(pos.x-r-1,0,0)),position_to_id.upper_bound(position(pos.x+r+1,0,0))}};
 }
 
